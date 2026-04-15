@@ -38,6 +38,7 @@ class SpeechFlowApp {
             this.loadSettings();
             this.setupKeyboardShortcuts();
             this.setupDebouncers();
+            this.checkAuth();
         } catch (error) {
             console.error('Failed to initialize app:', error);
             this.showError('Failed to initialize application. Please refresh the page.');
@@ -322,6 +323,11 @@ class SpeechFlowApp {
 
         document.getElementById('profile-btn')?.addEventListener('click', () => {
             this.showProfileModal();
+        });
+
+        document.getElementById('logout-btn')?.addEventListener('click', () => {
+            this.logout();
+            this.hideModal('profile-modal');
         });
 
         document.getElementById('import-url-btn')?.addEventListener('click', () => {
@@ -1024,7 +1030,7 @@ class SpeechFlowApp {
         this.showModal('profile-modal');
     }
 
-    handleLogin() {
+handleLogin() {
         const email = document.getElementById('login-email')?.value;
         const password = document.getElementById('login-password')?.value;
         
@@ -1032,6 +1038,133 @@ class SpeechFlowApp {
             this.showError('Please enter email and password');
             return;
         }
+        
+        this.handleLoginAPI(email, password);
+    }
+
+    async handleLoginAPI(email, password) {
+        try {
+            const response = await fetch('/api/auth?action=login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                localStorage.setItem('authToken', data.token);
+                localStorage.setItem('user', JSON.stringify(data.user));
+                this.updateAuthUI(data.user);
+                this.showNotification('Login successful!', 'success');
+                this.hideModal('login-modal');
+            } else {
+                this.showError(data.message || 'Login failed');
+            }
+        } catch (error) {
+            console.error('Login error:', error);
+            this.showError('Login failed. Please try again.');
+        }
+    }
+
+    handleSignup() {
+        const name = document.getElementById('signup-name')?.value;
+        const email = document.getElementById('signup-email')?.value;
+        const password = document.getElementById('signup-password')?.value;
+        const confirm = document.getElementById('signup-confirm')?.value;
+        
+        if (!name || !email || !password) {
+            this.showError('Please fill in all fields');
+            return;
+        }
+        
+        if (password !== confirm) {
+            this.showError('Passwords do not match');
+            return;
+        }
+        
+        if (password.length < 6) {
+            this.showError('Password must be at least 6 characters');
+            return;
+        }
+        
+        this.handleSignupAPI(name, email, password);
+    }
+
+    async handleSignupAPI(name, email, password) {
+        try {
+            const response = await fetch('/api/auth?action=signup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email, password })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                localStorage.setItem('authToken', data.token);
+                localStorage.setItem('user', JSON.stringify(data.user));
+                this.updateAuthUI(data.user);
+                this.showNotification('Account created successfully!', 'success');
+                this.hideModal('signup-modal');
+            } else {
+                this.showError(data.message || 'Signup failed');
+            }
+        } catch (error) {
+            console.error('Signup error:', error);
+            this.showError('Signup failed. Please try again.');
+        }
+    }
+
+    updateAuthUI(user) {
+        const signupBtn = document.getElementById('signup-btn');
+        const loginBtn = document.getElementById('login-btn');
+        const profileBtn = document.getElementById('profile-btn');
+        
+        if (signupBtn) signupBtn.classList.add('hidden');
+        if (loginBtn) loginBtn.classList.add('hidden');
+        if (profileBtn) profileBtn.classList.remove('hidden');
+    }
+
+    checkAuth() {
+        const token = localStorage.getItem('authToken');
+        const userStr = localStorage.getItem('user');
+        
+        if (token && userStr) {
+            try {
+                const user = JSON.parse(userStr);
+                this.updateAuthUI(user);
+            } catch (e) {
+                this.logout();
+            }
+        }
+    }
+
+    logout() {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
+        
+        const signupBtn = document.getElementById('signup-btn');
+        const loginBtn = document.getElementById('login-btn');
+        const profileBtn = document.getElementById('profile-btn');
+        
+        if (signupBtn) signupBtn.classList.remove('hidden');
+        if (loginBtn) loginBtn.classList.remove('hidden');
+        if (profileBtn) profileBtn.classList.add('hidden');
+        
+        this.showNotification('Logged out successfully', 'info');
+    }
+
+    showProfileModal() {
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        const profileName = document.getElementById('profile-name');
+        const profileEmail = document.getElementById('profile-email');
+        
+        if (profileName) profileName.textContent = user.name || 'User';
+        if (profileEmail) profileEmail.textContent = user.email || '';
+        
+        this.showModal('profile-modal');
+    }
         
         this.showNotification('Login functionality coming soon!', 'info');
         this.hideModal('login-modal');
