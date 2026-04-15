@@ -1,38 +1,26 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": null,
+  "outputDirectory": null,
+  "framework": null,
+  "public": true,
+  "cleanUrls": true,
+  "trailingSlash": false,
   "rewrites": [
-    { "source": "/((?!api/).*)", "destination": "/src/index.html" }
-  ],
-  "routes": [
     {
-      "src": "/styles/(.*)",
-      "dest": "/src/styles/$1"
-    },
-    {
-      "src": "/scripts/(.*)",
-      "dest": "/src/scripts/$1"
-    },
-    {
-      "src": "/src/assets/(.*)",
-      "dest": "/src/assets/$1"
-    },
-    {
-      "src": "/manifest.json",
-      "dest": "/public/manifest.json"
-    },
-    {
-      "src": "/sw.js",
-      "dest": "/public/sw.js"
+      "source": "/:path*",
+      "destination": "/src/index.html"
     }
   ],
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "Access-Control-Allow-Origin", "value": "*" },
-        { "key": "Access-Control-Allow-Methods", "value": "GET,POST,PUT,DELETE,OPTIONS" },
-        { "key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization" }
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        }
       ]
     }
-  ],
-  "trailingSlash": false
+  ]
 }
