@@ -1,12 +1,28 @@
 {
   "rewrites": [
-    { "source": "/", "destination": "/src/index.html" },
-    { "source": "/index.html", "destination": "/src/index.html" },
-    { "source": "/styles/:path*", "destination": "/src/styles/:path*" },
-    { "source": "/scripts/:path*", "destination": "/src/scripts/:path*" },
-    { "source": "/assets/:path*", "destination": "/src/assets/:path*" },
-    { "source": "/manifest.json", "destination": "/src/public/manifest.json" },
-    { "source": "/sw.js", "destination": "/src/public/sw.js" }
+    { "source": "/((?!api/).*)", "destination": "/src/index.html" }
+  ],
+  "routes": [
+    {
+      "src": "/styles/(.*)",
+      "dest": "/src/styles/$1"
+    },
+    {
+      "src": "/scripts/(.*)",
+      "dest": "/src/scripts/$1"
+    },
+    {
+      "src": "/src/assets/(.*)",
+      "dest": "/src/assets/$1"
+    },
+    {
+      "src": "/manifest.json",
+      "dest": "/public/manifest.json"
+    },
+    {
+      "src": "/sw.js",
+      "dest": "/public/sw.js"
+    }
   ],
   "headers": [
     {
@@ -17,5 +33,6 @@
         { "key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization" }
       ]
     }
-  ]
+  ],
+  "trailingSlash": false
 }

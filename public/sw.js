@@ -5,10 +5,10 @@ const API_CACHE_NAME = 'speechflow-api-v1';
 const ASSETS_TO_CACHE = [
   '/',
   '/src/index.html',
-  '/src/styles/main.css',
-  '/src/scripts/main.js',
-  '/src/scripts/storage.js',
-  '/public/manifest.json'
+  '/styles/main.css',
+  '/scripts/main.js',
+  '/scripts/storage.js',
+  '/manifest.json'
 ];
 
 const CACHE_STRATEGIES = {
