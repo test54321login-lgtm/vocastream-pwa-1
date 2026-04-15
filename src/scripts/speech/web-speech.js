@@ -110,6 +110,10 @@ class WebSpeechEngine {
 
             utterance.onerror = (event) => {
                 this.isSpeaking = false;
+                if (event.error === 'interrupted' || event.error === 'canceled' || event.error === 'cancel') {
+                    resolve();
+                    return;
+                }
                 if (this.callbacks.onError) {
                     this.callbacks.onError(event);
                 }

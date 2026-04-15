@@ -605,6 +605,11 @@ class SpeechFlowApp {
             return;
         }
 
+        if (!this.synth) {
+            this.showError('Speech synthesis is not available in your browser');
+            return;
+        }
+
         if (this.currentEngine === 'web') {
             await this.generateWebSpeech(text);
         } else {
