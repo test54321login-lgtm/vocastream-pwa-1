@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Premium Text-to-Speech PWA with dual speech engines">
+    <meta name="theme-color" content="#6366f1">
+    <title>VocaStream - Premium TTS PWA</title>
+    <link rel="stylesheet" href="/styles/main.css">
+    <link rel="manifest" href="/manifest.json">
+    
+    <!-- PDF.js for client-side PDF parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
+    
+    <!-- Mammoth.js for client-side Word document parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    
+    <!-- Tesseract.js for client-side OCR -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    
+    <!-- Axios for URL fetching -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.7/axios.min.js"></script>
+</head>
+<body>
+    <div id="app">
+        <div id="main-container" class="container" role="main">
+            <!-- Header -->
+            <header class="app-header" role="banner">
+                <h1 class="app-title">VocaStream</h1>
+                <nav class="app-nav" role="navigation" aria-label="Main navigation">
+                    <button id="home-btn" class="nav-btn active" data-view="home" role="tab" aria-selected="true" aria-controls="home-view">Home</button>
+                    <button id="documents-btn" class="nav-btn" data-view="documents" role="tab" aria-selected="false" aria-controls="documents-view">Documents</button>
+                    <button id="history-btn" class="nav-btn" data-view="history" role="tab" aria-selected="false" aria-controls="history-view">History</button>
+                    <button id="settings-btn" class="nav-btn" data-view="settings" role="tab" aria-selected="false" aria-controls="settings-view">Settings</button>
+                </nav>
+                <div class="user-actions">
+                    <button id="signup-btn" class="btn btn-secondary" aria-label="Sign up for a new account">Sign Up</button>
+                    <button id="login-btn" class="btn btn-secondary" aria-label="Login to your account">Login</button>
+                    <button id="profile-btn" class="btn btn-primary hidden" aria-label="View your profile">Profile</button>
+                </div>
+            </header>
+
+            <!-- Main content area -->
+            <main class="app-main">
+                <!-- Home View -->
+                <section id="home-view" class="view active" role="tabpanel" aria-labelledby="home-btn">
+                    <div class="hero-section">
+                        <h2 class="hero-title">Transform Text to Speech</h2>
+                        <p class="hero-subtitle">With premium quality voices and offline capabilities</p>
+                        
+                        <div class="engine-selection">
+                            <h3 id="engine-heading">Select Speech Engine</h3>
+                            <div class="engine-options" role="radiogroup" aria-labelledby="engine-heading">
+                                <button id="web-speech-btn" class="engine-btn active" data-engine="web" role="radio" aria-checked="true">
+                                    <span class="engine-icon" aria-hidden="true">🌐</span>
+                                    <span class="engine-name">Browser Voices</span>
+                                    <span class="engine-desc">Fast, local processing</span>
+                                </button>
+                                <button id="sarvam-speech-btn" class="engine-btn" data-engine="sarvam" role="radio" aria-checked="false">
+                                    <span class="engine-icon" aria-hidden="true">🤖</span>
+                                    <span class="engine-name">Sarvam AI</span>
+                                    <span class="engine-desc">Natural, high-quality voices</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="web-speech-settings" class="speech-settings" role="region" aria-label="Web Speech settings">
+                            <h3>Web Speech Settings</h3>
+                            <div class="setting-row">
+                                <label for="voice-select">Voice</label>
+                                <select id="voice-select" aria-describedby="voice-select-desc">
+                                    <option value="">Select a voice...</option>
+                                </select>
+                                <span id="voice-select-desc" class="sr-only">Select a voice for text-to-speech</span>
+                            </div>
+                            <div class="setting-row">
+                                <button id="preview-voice-btn" class="btn btn-secondary btn-small" aria-label="Preview selected voice">Preview Voice</button>
+                            </div>
+                            <div class="setting-row">
+                                <label for="speed-range">Speed <span class="sr-only">(0.5 to 2.0)</span></label>
+                                <input type="range" id="speed-range" min="0.5" max="2" step="0.1" value="1" aria-valuemin="0.5" aria-valuemax="2" aria-valuenow="1" aria-valuetext="1.0x">
+                                <span id="speed-value" class="range-value" aria-live="polite">1.0x</span>
+                            </div>
+                            <div class="setting-row">
+                                <label for="pitch-range">Pitch <span class="sr-only">(0 to 2)</span></label>
+                                <input type="range" id="pitch-range" min="0" max="2" step="0.1" value="1" aria-valuemin="0" aria-valuemax="2" aria-valuenow="1" aria-valuetext="1.0">
+                                <span id="pitch-value" class="range-value" aria-live="polite">1.0</span>
+                            </div>
+                            <div class="setting-row">
+                                <label for="volume-range">Volume <span class="sr-only">(0 to 100%)</span></label>
+                                <input type="range" id="volume-range" min="0" max="1" step="0.1" value="1" aria-valuemin="0" aria-valuemax="1" aria-valuenow="1" aria-valuetext="100%">
+                                <span id="volume-value" class="range-value" aria-live="polite">100%</span>
+                            </div>
+                        </div>
+
+                        <div id="sarvam-speech-settings" class="speech-settings hidden" role="region" aria-label="Sarvam AI settings">
+                            <h3>Sarvam AI Settings</h3>
+                            <div class="setting-row">
+                                <label for="sarvam-voice-select">Voice</label>
+                                <select id="sarvam-voice-select">
+                                    <option value="shubh">Shubh (Male - Default)</option>
+                                    <option value="arya">Arya (Male)</option>
+                                    <option value="aditya">Aditya (Male)</option>
+                                    <option value="rahul">Rahul (Male)</option>
+                                    <option value="rohan">Rohan (Male)</option>
+                                    <option value="anushka">Anushka (Female)</option>
+                                    <option value="shreya">Shreya (Female)</option>
+                                    <option value="priya">Priya (Female)</option>
+                                    <option value="neha">Neha (Female)</option>
+                                </select>
+                            </div>
+                            <div class="setting-row">
+                                <label for="sarvam-language-select">Language</label>
+                                <select id="sarvam-language-select">
+                                    <option value="en-IN">English (India)</option>
+                                    <option value="hi-IN">Hindi</option>
+                                    <option value="ta-IN">Tamil</option>
+                                    <option value="te-IN">Telugu</option>
+                                    <option value="kn-IN">Kannada</option>
+                                    <option value="ml-IN">Malayalam</option>
+                                    <option value="mr-IN">Marathi</option>
+                                    <option value="gu-IN">Gujarati</option>
+                                    <option value="bn-IN">Bengali</option>
+                                </select>
+                            </div>
+                            <div class="setting-row">
+                                <label for="sarvam-pace-range">Pace <span class="sr-only">(0.5 to 2.0)</span></label>
+                                <input type="range" id="sarvam-pace-range" min="0.5" max="2" step="0.1" value="1" aria-valuemin="0.5" aria-valuemax="2" aria-valuenow="1" aria-valuetext="1.0x">
+                                <span id="sarvam-pace-value" class="range-value" aria-live="polite">1.0x</span>
+                            </div>
+                            <div class="setting-row">
+                                <label for="sarvam-pitch-range">Pitch <span class="sr-only">(0 to 2)</span></label>
+                                <input type="range" id="sarvam-pitch-range" min="0" max="2" step="0.1" value="1" aria-valuemin="0" aria-valuemax="2" aria-valuenow="1" aria-valuetext="1.0">
+                                <span id="sarvam-pitch-value" class="range-value" aria-live="polite">1.0</span>
+                            </div>
+                        </div>
+
+                        <div class="input-section">
+                            <h3>Enter Your Text</h3>
+                            <label for="text-input" class="sr-only">Text input for speech synthesis</label>
+                            <textarea id="text-input" placeholder="Paste your text here, upload a document, or import from a URL..." rows="8" aria-describedby="text-stats"></textarea>
+                            <div class="input-stats" aria-live="polite" aria-atomic="true">
+                                <span id="text-stats">0 words, 0 characters</span>
+                            </div>
+                            <div class="input-controls" role="group" aria-label="Text input controls">
+                                <button id="upload-btn" class="btn btn-secondary" aria-label="Upload a document">Upload</button>
+                                <button id="import-url-btn" class="btn btn-secondary" aria-label="Import content from URL">Import URL</button>
+                                <button id="clear-btn" class="btn btn-secondary" aria-label="Clear text input">Clear</button>
+                                <button id="generate-btn" class="btn btn-primary" aria-label="Generate speech from text">Generate Speech</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Documents View -->
+                <section id="documents-view" class="view" role="tabpanel" aria-labelledby="documents-btn">
+                    <h2>Document Library</h2>
+                    <div class="documents-actions" role="group" aria-label="Document actions">
+                        <button id="upload-document-btn" class="btn btn-primary" aria-label="Upload a new document">Upload Document</button>
+                        <button id="new-folder-btn" class="btn btn-secondary" aria-label="Create a new folder">New Folder</button>
+                    </div>
+                    <div id="documents-list" class="documents-list" role="list" aria-label="Your documents">
+                        <div class="document-item" role="listitem">
+                            <div class="document-info">
+                                <h3>Sample Document</h3>
+                                <p class="document-meta">1,245 words • PDF</p>
+                            </div>
+                            <div class="document-actions" role="group" aria-label="Document actions">
+                                <button class="btn btn-small" aria-label="Play document">Play</button>
+                                <button class="btn btn-small" aria-label="View document details">Details</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- History View -->
+                <section id="history-view" class="view" role="tabpanel" aria-labelledby="history-btn">
+                    <h2>Speech History</h2>
+                    <div id="history-list" class="history-list" role="list" aria-label="Speech generation history">
+                        <div class="history-item" role="listitem">
+                            <div class="history-info">
+                                <h3>Meeting Notes</h3>
+                                <p class="history-meta">Today, 2:30 PM • 3:45 min</p>
+                            </div>
+                            <div class="history-actions" role="group" aria-label="History item actions">
+                                <button class="btn btn-small" aria-label="Play this item">Play</button>
+                                <button class="btn btn-small" aria-label="Regenerate speech">Re-generate</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Settings View -->
+                <section id="settings-view" class="view" role="tabpanel" aria-labelledby="settings-btn">
+                    <h2>Settings</h2>
+                    <div class="settings-section">
+                        <h3>Speech Preferences</h3>
+                        <div class="setting-row">
+                            <label for="default-engine">Default Engine</label>
+                            <select id="default-engine">
+                                <option value="web">Browser Voices</option>
+                                <option value="sarvam">Sarvam AI</option>
+                            </select>
+                        </div>
+                        <div class="setting-row">
+                            <label for="theme-select">Theme</label>
+                            <select id="theme-select">
+                                <option value="light">Light</option>
+                                <option value="dark">Dark</option>
+                                <option value="system">System</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>Sarvam AI API</h3>
+                        <div class="setting-row">
+                            <label for="sarvam-api-key">API Key</label>
+                            <input type="password" id="sarvam-api-key" placeholder="Enter your Sarvam AI API key" aria-describedby="api-key-desc">
+                            <span id="api-key-desc" class="sr-only">Enter your Sarvam AI API key to enable cloud speech synthesis</span>
+                        </div>
+                        <div class="setting-row">
+                            <button id="save-api-key-btn" class="btn btn-primary" aria-label="Save your API key">Save API Key</button>
+                        </div>
+                    </div>
+                    
+                    <div class="settings-section">
+                        <h3>Offline & Sync</h3>
+                        <div class="setting-row">
+                            <span id="queue-status" aria-live="polite">0 pending items</span>
+                        </div>
+                        <div class="setting-row" role="group" aria-label="Sync controls">
+                            <button id="sync-now-btn" class="btn btn-secondary" aria-label="Sync pending items now">Sync Now</button>
+                            <button id="clear-offline-btn" class="btn btn-secondary" aria-label="Clear offline data">Clear Offline Data</button>
+                        </div>
+                        <div class="setting-row">
+                            <button id="clear-cache-btn" class="btn btn-secondary" aria-label="Clear browser cache">Clear Cache</button>
+                        </div>
+                    </div>
+                    
+                    <div class="settings-section">
+                        <h3>Data Management</h3>
+                        <div class="setting-row">
+                            <button id="clear-history-btn" class="btn btn-secondary" aria-label="Clear speech history">Clear History</button>
+                        </div>
+                    </div>
+                </section>
+            </main>
+
+            <!-- Player Controls -->
+            <div id="player-container" class="player-container hidden" role="region" aria-label="Audio player controls">
+                <div class="player-controls">
+                    <button id="play-pause-btn" class="control-btn" aria-label="Play or pause audio">
+                        <span class="icon" aria-hidden="true">▶</span>
+                    </button>
+                    <button id="stop-btn" class="control-btn" aria-label="Stop audio playback">
+                        <span class="icon" aria-hidden="true">⏹</span>
+                    </button>
+                    <div class="progress-container">
+                        <div class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Audio progress">
+                            <div id="progress-fill" class="progress-fill"></div>
+                        </div>
+                        <span id="time-display" class="time-display" aria-live="polite">
+                            <span id="current-time">0:00</span> / <span id="total-time">0:00</span>
+                        </span>
+                    </div>
+                    <div class="volume-control">
+                        <span class="icon" aria-hidden="true">🔊</span>
+                        <label for="player-volume" class="sr-only">Volume</label>
+                        <input type="range" id="player-volume" min="0" max="1" step="0.01" value="1" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" aria-valuetext="100%">
+                    </div>
+                    <button id="download-btn" class="control-btn" aria-label="Download audio file">
+                        <span class="icon" aria-hidden="true">⬇</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" role="status" aria-live="polite" aria-atomic="true"></div>
+
+    <!-- File Upload Modal -->
+    <div id="file-upload-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="file-modal-title">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="file-modal-title">Upload Document</h3>
+                <button class="modal-close" aria-label="Close dialog">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="drop-zone" class="drop-zone" role="button" tabindex="0" aria-label="Drop files here or click to browse">
+                    <p>Drag and drop files here</p>
+                    <p class="drop-zone-sub">or click to browse</p>
+                    <input type="file" id="file-input" accept=".txt,.pdf,.doc,.docx,.png,.jpg,.jpeg,.gif,.bmp,.webp" multiple hidden aria-label="Select files to upload">
+                </div>
+                <div id="file-list" class="file-list" role="list" aria-label="Selected files"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-cancel btn btn-secondary" aria-label="Cancel upload">Cancel</button>
+                <button id="process-files-btn" class="btn btn-primary" disabled aria-label="Process selected files">Process Files</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- URL Import Modal -->
+    <div id="url-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="url-modal-title">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="url-modal-title">Import from URL</h3>
+                <button class="modal-close" aria-label="Close dialog">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="setting-row">
+                    <label for="url-input">Enter URL</label>
+                    <input type="url" id="url-input" placeholder="https://example.com/article" aria-describedby="url-input-desc">
+                    <span id="url-input-desc" class="sr-only">Enter the URL of the webpage to import content from</span>
+                </div>
+                <div id="url-preview" class="url-preview hidden" role="region" aria-label="Content preview">
+                    <h4>Preview</h4>
+                    <p id="url-preview-text"></p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-cancel btn btn-secondary" aria-label="Cancel">Cancel</button>
+                <button id="fetch-url-btn" class="btn btn-primary" aria-label="Fetch content from URL">Fetch Content</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="login-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="login-modal-title">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="login-modal-title">Login</h3>
+                <button class="modal-close" aria-label="Close dialog">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="setting-row">
+                    <label for="login-email">Email</label>
+                    <input type="email" id="login-email" placeholder="Enter your email">
+                </div>
+                <div class="setting-row">
+                    <label for="login-password">Password</label>
+                    <input type="password" id="login-password" placeholder="Enter your password">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-cancel btn btn-secondary" aria-label="Cancel">Cancel</button>
+                <button id="login-submit-btn" class="btn btn-primary" aria-label="Login">Login</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Signup Modal -->
+    <div id="signup-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="signup-modal-title">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="signup-modal-title">Sign Up</h3>
+                <button class="modal-close" aria-label="Close dialog">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="setting-row">
+                    <label for="signup-name">Full Name</label>
+                    <input type="text" id="signup-name" placeholder="Enter your full name">
+                </div>
+                <div class="setting-row">
+                    <label for="signup-email">Email</label>
+                    <input type="email" id="signup-email" placeholder="Enter your email">
+                </div>
+                <div class="setting-row">
+                    <label for="signup-password">Password</label>
+                    <input type="password" id="signup-password" placeholder="Create a password">
+                </div>
+                <div class="setting-row">
+                    <label for="signup-confirm">Confirm Password</label>
+                    <input type="password" id="signup-confirm" placeholder="Confirm your password">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-cancel btn btn-secondary" aria-label="Cancel">Cancel</button>
+                <button id="signup-submit-btn" class="btn btn-primary" aria-label="Sign Up">Sign Up</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Modal -->
+    <div id="profile-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="profile-modal-title">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="profile-modal-title">Profile</h3>
+                <button class="modal-close" aria-label="Close dialog">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="profile-info">
+                    <p>Welcome to VocaStream!</p>
+                    <p>Sign in to sync your documents and history across devices.</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-cancel btn btn-secondary" aria-label="Close">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Skip link for accessibility -->
+    <a href="#main-container" class="skip-link">Skip to main content</a>
+
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('SW registered: ', registration);
+                    })
+                    .catch(error => {
+                        console.log('SW registration failed: ', error);
+                    });
+            });
+        }
+    </script>
+
+    <!-- Main application script -->
+    <script type="module" src="scripts/main.js"></script>
+</body>
