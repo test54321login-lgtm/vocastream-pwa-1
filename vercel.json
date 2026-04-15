@@ -1,0 +1,21 @@
+{
+  "rewrites": [
+    { "source": "/", "destination": "/src/index.html" },
+    { "source": "/index.html", "destination": "/src/index.html" },
+    { "source": "/styles/:path*", "destination": "/src/styles/:path*" },
+    { "source": "/scripts/:path*", "destination": "/src/scripts/:path*" },
+    { "source": "/assets/:path*", "destination": "/src/assets/:path*" },
+    { "source": "/manifest.json", "destination": "/src/public/manifest.json" },
+    { "source": "/sw.js", "destination": "/src/public/sw.js" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET,POST,PUT,DELETE,OPTIONS" },
+        { "key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization" }
+      ]
+    }
+  ]
+}

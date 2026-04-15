@@ -1,0 +1,16 @@
+{
+  "name": "vocastream-pwa",
+  "version": "1.0.0",
+  "description": "Premium Text-to-Speech PWA with dual speech engines",
+  "main": "index.js",
+  "scripts": {
+    "dev": "npx http-server src -p 3001 -c-1",
+    "build": "echo 'No build needed for static PWA'",
+    "start": "npx http-server src -p 3000 -c-1"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
